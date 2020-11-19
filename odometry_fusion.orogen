@@ -1,0 +1,25 @@
+name "odometry_fusion"
+# Optionally declare the version number
+# version "0.1"
+
+using_library "odometry_fusion"
+
+#import_types_from "std"
+import_types_from "base"
+
+
+task_context "Task" do
+    needs_configuration
+
+    input_port "inertial_delta_pose_in", "/base/samples/RigidBodyState"
+        doc "Delta pose estimated by inertial odometry"
+        
+    input_port "visual_delta_pose_in", "/base/samples/RigidBodyState"
+        doc "Delta pose estimated by visual odometry"
+    
+    output_port "pose_out", "/base/samples/RigidBodyState"
+        doc "Output pose"
+
+    port_driven
+end
+
