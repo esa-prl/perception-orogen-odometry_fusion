@@ -46,7 +46,17 @@ void Task::updateHook()
 }
 void Task::processVisualOdometryIn(RigidBodyState delta_pose)
 {
+    // Vector3d euler = delta_pose.orientation.toRotationMatrix().eulerAngles(2, 1, 0);
+    Vector3d euler = OdometryFusion::quat2eul(delta_pose.orientation);
+    ObservationVector z;
+    z << delta_pose.position, euler;
     cout << "[VISUAL]" << z.format(singleLine) << endl;
+    ObservationVector Rd;
+    Rd << 1, 1, 1, .1, .1, .1;
+    Rd *= 0.05;
+    ObservationCovarianceMatrix R = Rd.asDiagonal();
+    R = R.transpose().eval() * R;
+    library->update(delta_pose.time, z, R);
 }
 void Task::processInertialOdometryIn(RigidBodyState delta_pose)
 {
