@@ -43,6 +43,7 @@ void Task::updateHook()
     {
         processVisualOdometryIn(delta_pose);
     }
+    outputPortPose();
 }
 void Task::processVisualOdometryIn(RigidBodyState delta_pose)
 {
@@ -83,6 +84,19 @@ void Task::processInertialOdometryIn(RigidBodyState delta_pose)
     C = C.transpose().eval() * C;
     library->predict(delta_pose.time, u, C);
 }
+
+void Task::outputPortPose(){
+    RigidBodyState pose_out;
+    pose_out.time = library->getCurrentTime();
+    StateVector x = library->getState();
+    pose_out.position = x.head(3);
+    pose_out.orientation =  Eigen::Quaterniond(
+            Eigen::AngleAxisd(x(3), Eigen::Vector3d::UnitZ())*
+            Eigen::AngleAxisd(x(4), Eigen::Vector3d::UnitY())*
+            Eigen::AngleAxisd(x(5),  Eigen::Vector3d::UnitX()));
+    _pose_out.write(pose_out);
+}
+
 void Task::errorHook() { TaskBase::errorHook(); }
 void Task::stopHook() { TaskBase::stopHook(); }
 void Task::cleanupHook() { TaskBase::cleanupHook(); }

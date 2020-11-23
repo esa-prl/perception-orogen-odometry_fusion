@@ -19,6 +19,7 @@ class Task : public TaskBase
 
     void processVisualOdometryIn(base::samples::RigidBodyState deltaPose);
     void processInertialOdometryIn(base::samples::RigidBodyState deltaPose);
+    void outputPortPose();
 
   public:
     Task(std::string const& name = "odometry_fusion::Task");
