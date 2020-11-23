@@ -47,12 +47,17 @@ void Task::updateHook()
 void Task::processVisualOdometryIn(RigidBodyState delta_pose)
 {
     // Vector3d euler = delta_pose.orientation.toRotationMatrix().eulerAngles(2, 1, 0);
-    Vector3d euler = OdometryFusion::quat2eul(delta_pose.orientation);
+    Vector3d delta_euler = OdometryFusion::quat2eul(delta_pose.orientation);
     ObservationVector z;
-    z << delta_pose.position, euler;
-    cout << "[VISUAL]" << z.format(singleLine) << endl;
+
+    // Delta euler angles are reversed to represent a local angular velocity
+    // Note that when (k-1) euler angles are zero the matrices that convert
+    // Time Derivative of Euler Angles ZYX <=> Angular Velocity
+    // are anti-diagonal [0 0 1; 0 1 0; 1 0 0]
+    z << delta_pose.position, delta_euler.reverse();
+    cout << "[ODOMETRY_FUSION VISUAL]" << z.format(singleLine) << endl;
     ObservationVector Rd;
-    Rd << 1, 1, 1, .1, .1, .1;
+    Rd << 1, 1, 1, .1, .1, .1; //TODO: make configurable
     Rd *= 0.05;
     ObservationCovarianceMatrix R = Rd.asDiagonal();
     R = R.transpose().eval() * R;
@@ -60,7 +65,23 @@ void Task::processVisualOdometryIn(RigidBodyState delta_pose)
 }
 void Task::processInertialOdometryIn(RigidBodyState delta_pose)
 {
-    cout << "[INERTIAL]" << delta_pose.position << endl;
+    InputVector u;
+    if (delta_pose.velocity.hasNaN() or delta_pose.angular_velocity.hasNaN())
+    {
+        throw std::runtime_error("[ODOMETRY_FUSION] Invalid velocity or angular velocity");
+        return;
+    }
+    else
+    {
+        u<<delta_pose.velocity, delta_pose.angular_velocity;
+    }
+    cout << "[ODOMETRY_FUSION INERTIAL]" << u.format(singleLine) << endl;
+    InputVector Cd;
+    Cd << 1, 1, 1, .1, .1, .1; //TODO: make configurable
+    Cd *= 0.001;
+    InputCovarianceMatrix C = Cd.asDiagonal();
+    C = C.transpose().eval() * C;
+    library->predict(delta_pose.time, u, C);
 }
 void Task::errorHook() { TaskBase::errorHook(); }
 void Task::stopHook() { TaskBase::stopHook(); }
