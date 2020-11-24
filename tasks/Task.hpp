@@ -3,6 +3,7 @@
 #ifndef ODOMETRY_FUSION_TASK_TASK_HPP
 #define ODOMETRY_FUSION_TASK_TASK_HPP
 
+#include "base/Time.hpp"
 #include "base/samples/RigidBodyState.hpp"
 #include "odometry_fusion/OdometryFusion.hpp"
 #include "odometry_fusion/TaskBase.hpp"
@@ -16,10 +17,12 @@ class Task : public TaskBase
 
   protected:
     OdometryFusion* library;
+    base::Time initial_time;
 
     void processVisualOdometryIn(base::samples::RigidBodyState deltaPose);
     void processInertialOdometryIn(base::samples::RigidBodyState deltaPose);
     void outputPortPose();
+    double getTime(base::Time t);
 
   public:
     Task(std::string const& name = "odometry_fusion::Task");

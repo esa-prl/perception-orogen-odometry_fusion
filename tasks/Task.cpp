@@ -15,6 +15,16 @@ Task::Task(string const& name) : TaskBase(name), library(new OdometryFusion()) {
 
 Task::~Task() { delete library; }
 
+double Task::getTime(base::Time t)
+{
+    if (initial_time.isNull())
+    {
+        initial_time = t;
+        return 0;
+    }
+    return (t - initial_time).toSeconds();
+}
+
 /// The following lines are template definitions for the various state machine
 // hooks defined by Orocos::RTT. See Task.hpp for more detailed
 // documentation about them.
@@ -56,9 +66,10 @@ void Task::processVisualOdometryIn(RigidBodyState delta_pose)
     // Time Derivative of Euler Angles ZYX <=> Angular Velocity
     // are anti-diagonal [0 0 1; 0 1 0; 1 0 0]
     z << delta_pose.position, delta_euler.reverse();
-    cout << "[ODOMETRY_FUSION VISUAL]" << z.format(singleLine) << endl;
+    cout << "[ODOMETRY_FUSION VISUAL " << getTime(delta_pose.time) << "]" << z.format(singleLine)
+         << endl;
     ObservationVector Rd;
-    Rd << 1, 1, 1, .1, .1, .1; //TODO: make configurable
+    Rd << 1, 1, 1, .1, .1, .1;  // TODO: make configurable
     Rd *= 0.05;
     ObservationCovarianceMatrix R = Rd.asDiagonal();
     R = R.transpose().eval() * R;
@@ -74,26 +85,27 @@ void Task::processInertialOdometryIn(RigidBodyState delta_pose)
     }
     else
     {
-        u<<delta_pose.velocity, delta_pose.angular_velocity;
+        u << delta_pose.velocity, delta_pose.angular_velocity;
     }
-    cout << "[ODOMETRY_FUSION INERTIAL]" << u.format(singleLine) << endl;
+    cout << "[ODOMETRY_FUSION INERTIAL" << getTime(delta_pose.time) << "]" << u.format(singleLine)
+         << endl;
     InputVector Cd;
-    Cd << 1, 1, 1, .1, .1, .1; //TODO: make configurable
+    Cd << 1, 1, 1, .1, .1, .1;  // TODO: make configurable
     Cd *= 0.001;
     InputCovarianceMatrix C = Cd.asDiagonal();
     C = C.transpose().eval() * C;
     library->predict(delta_pose.time, u, C);
 }
 
-void Task::outputPortPose(){
+void Task::outputPortPose()
+{
     RigidBodyState pose_out;
     pose_out.time = library->getCurrentTime();
     StateVector x = library->getState();
     pose_out.position = x.head(3);
-    pose_out.orientation =  Eigen::Quaterniond(
-            Eigen::AngleAxisd(x(3), Eigen::Vector3d::UnitZ())*
-            Eigen::AngleAxisd(x(4), Eigen::Vector3d::UnitY())*
-            Eigen::AngleAxisd(x(5),  Eigen::Vector3d::UnitX()));
+    pose_out.orientation = Eigen::Quaterniond(Eigen::AngleAxisd(x(3), Eigen::Vector3d::UnitZ())
+                                              * Eigen::AngleAxisd(x(4), Eigen::Vector3d::UnitY())
+                                              * Eigen::AngleAxisd(x(5), Eigen::Vector3d::UnitX()));
     _pose_out.write(pose_out);
 }
 
