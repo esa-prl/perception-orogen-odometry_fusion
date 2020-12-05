@@ -39,24 +39,11 @@ bool Task::startHook()
     if (!TaskBase::startHook()) return false;
     return true;
 }
-void Task::updateHook()
-{
-    TaskBase::updateHook();
+void Task::updateHook() { TaskBase::updateHook(); }
 
-    RigidBodyState delta_pose;
-    if (_inertial_delta_pose_in.read(delta_pose) == RTT::NewData)
+void Task::visual_delta_pose_inCallback(const base::Time& ts,
+                                        const ::base::samples::RigidBodyState& delta_pose)
     {
-        processInertialOdometryIn(delta_pose);
-    }
-
-    if (_visual_delta_pose_in.read(delta_pose) == RTT::NewData)
-    {
-        processVisualOdometryIn(delta_pose);
-    }
-    outputPortPose();
-}
-void Task::processVisualOdometryIn(RigidBodyState delta_pose)
-{
     // Vector3d euler = delta_pose.orientation.toRotationMatrix().eulerAngles(2, 1, 0);
     Vector3d delta_euler = OdometryFusion::quat2eul(delta_pose.orientation);
     ObservationVector z;
@@ -74,8 +61,12 @@ void Task::processVisualOdometryIn(RigidBodyState delta_pose)
     ObservationCovarianceMatrix R = Rd.asDiagonal();
     R = R.transpose().eval() * R;
     library->update(delta_pose.time, z, R);
+
+    outputPortPose();
 }
-void Task::processInertialOdometryIn(RigidBodyState delta_pose)
+
+void Task::inertial_delta_pose_inCallback(const base::Time& ts,
+                                          const ::base::samples::RigidBodyState& delta_pose)
 {
     InputVector u;
     if (delta_pose.velocity.hasNaN() or delta_pose.angular_velocity.hasNaN())
@@ -95,6 +86,8 @@ void Task::processInertialOdometryIn(RigidBodyState delta_pose)
     InputCovarianceMatrix C = Cd.asDiagonal();
     C = C.transpose().eval() * C;
     library->predict(delta_pose.time, u, C);
+
+    outputPortPose();
 }
 
 void Task::outputPortPose()

@@ -15,4 +15,5 @@
   <depend package="dummy-dependency-n" />
   -->
   <depend package="perception/odometry_fusion" />
+  <depend package="drivers/orogen/aggregator" />
 </package>

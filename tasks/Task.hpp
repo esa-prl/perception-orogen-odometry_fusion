@@ -19,8 +19,12 @@ class Task : public TaskBase
     OdometryFusion* library;
     base::Time initial_time;
 
-    void processVisualOdometryIn(base::samples::RigidBodyState deltaPose);
-    void processInertialOdometryIn(base::samples::RigidBodyState deltaPose);
+    virtual void inertial_delta_pose_inCallback(const base::Time& ts,
+                                                const ::base::samples::RigidBodyState& delta_pose);
+
+    virtual void visual_delta_pose_inCallback(const base::Time& ts,
+                                              const ::base::samples::RigidBodyState& delta_pose);
+
     void outputPortPose();
     double getTime(base::Time t);
 

@@ -20,6 +20,12 @@ task_context "Task" do
     output_port "pose_out", "/base/samples/RigidBodyState"
         doc "Output pose"
 
+    stream_aligner do
+        max_latency 0.5
+        align_port "visual_delta_pose_in", 0
+        align_port "inertial_delta_pose_in", 0
+    end
+
     port_driven
 end
 
