@@ -43,7 +43,7 @@ void Task::updateHook() { TaskBase::updateHook(); }
 
 void Task::visual_delta_pose_inCallback(const base::Time& ts,
                                         const ::base::samples::RigidBodyState& delta_pose)
-    {
+{
     // Vector3d euler = delta_pose.orientation.toRotationMatrix().eulerAngles(2, 1, 0);
     Vector3d delta_euler = OdometryFusion::quat2eul(delta_pose.orientation);
     ObservationVector z;
@@ -55,10 +55,9 @@ void Task::visual_delta_pose_inCallback(const base::Time& ts,
     z << delta_pose.position, delta_euler.reverse();
     cout << "[ODOMETRY_FUSION VISUAL " << getTime(delta_pose.time) << "]" << z.format(singleLine)
          << endl;
-    ObservationVector Rd;
-    Rd << 1, 1, 1, .1, .1, .1;  // TODO: make configurable
-    Rd *= 0.05;
-    ObservationCovarianceMatrix R = Rd.asDiagonal();
+
+    // by putting the stdev in the diagonal and self multiplying, we get a proper covariance matrix
+    ObservationCovarianceMatrix R = _visual_standard_deviation.value().asDiagonal();
     R = R.transpose().eval() * R;
     library->update(delta_pose.time, z, R);
 
@@ -80,10 +79,7 @@ void Task::inertial_delta_pose_inCallback(const base::Time& ts,
     }
     cout << "[ODOMETRY_FUSION INERTIAL" << getTime(delta_pose.time) << "]" << u.format(singleLine)
          << endl;
-    InputVector Cd;
-    Cd << 1, 1, 1, .1, .1, .1;  // TODO: make configurable
-    Cd *= 0.001;
-    InputCovarianceMatrix C = Cd.asDiagonal();
+    InputCovarianceMatrix C = _inertial_standard_deviation.value().asDiagonal();
     C = C.transpose().eval() * C;
     library->predict(delta_pose.time, u, C);
 

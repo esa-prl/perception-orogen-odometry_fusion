@@ -4,21 +4,37 @@ name "odometry_fusion"
 
 using_library "odometry_fusion"
 
-#import_types_from "std"
+# import_types_from "std"
 import_types_from "base"
+import_types_from "odometry_fusion/Config.hpp"
 
 
 task_context "Task" do
     needs_configuration
 
+    property("lib_config", "odometry_fusion/Config")
+        .doc("Structure containing all configuration parameters of the library.")
+
+    property("inertial_standard_deviation", "/base/Vector6d")
+        .doc("Standard deviation of the inertial odometry observation.
+              the observation is the derivative of [x;y;z;pitch;roll;yaw] but in local frame")
+
+    property("visual_standard_deviation", "/base/Vector6d")
+        .doc("Standard deviation of the visual odometry observation.
+              the observation is the diff of [x;y;z;pitch;roll;yaw] but in local frame")
+
     input_port "inertial_delta_pose_in", "/base/samples/RigidBodyState"
-        doc "Delta pose estimated by inertial odometry"
-        
+    doc "Delta pose estimated by inertial odometry
+         The velocity and angular velocity from the delta pose will be given
+         to the kalman filter and the filter will predict until the sample time"
+
     input_port "visual_delta_pose_in", "/base/samples/RigidBodyState"
-        doc "Delta pose estimated by visual odometry"
-    
+    doc "Delta pose estimated by visual odometry.
+         Each new sample will trigger the kalman filter to predict until
+         the sample time and then update using the pose diff."
+
     output_port "pose_out", "/base/samples/RigidBodyState"
-        doc "Output pose"
+    doc "Output pose"
 
     stream_aligner do
         max_latency 0.5
@@ -28,4 +44,3 @@ task_context "Task" do
 
     port_driven
 end
-

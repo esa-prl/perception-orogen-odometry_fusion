@@ -1,0 +1,32 @@
+--- name:default
+# maximum latency, in seconds, of the stream aligner. The aligner will start dropping samples if the difference between the last output and last input is greater than this
+aggregator_max_latency: 0.5
+# minimum time, in s, between two sequential samples arrive on inertial_delta_pose_in
+inertial_delta_pose_in_period: 0.0
+# Standard deviation of the inertial odometry observation.
+#               the observation is the derivative of [x;y;z;pitch;roll;yaw] but in local frame
+inertial_standard_deviation:
+  data:
+  - 4.68915624407606e-310
+  - 4.1e-322
+  - 4.1e-322
+  - 2.2567992169686413e-307
+  - 6.95322939085425e-310
+  - 0.0
+# Structure containing all configuration parameters of the library.
+lib_config:
+  integration_dt: 0.01
+# minimum system time in s between two status readings
+stream_aligner_status_period: 1.0
+# minimum time, in s, between two sequential samples arrive on visual_delta_pose_in
+visual_delta_pose_in_period: 0.0
+# Standard deviation of the visual odometry observation.
+#               the observation is the diff of [x;y;z;pitch;roll;yaw] but in local frame
+visual_standard_deviation:
+  data:
+  - 4.68915624407606e-310
+  - 4.0e-322
+  - 4.0e-322
+  - 2.2567992169686413e-307
+  - 6.95322939085425e-310
+  - 0.0
